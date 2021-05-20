@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ComponentFactoryResolver, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
+import { AlertComponent } from '../shared/alert/alert.component';
+import { PlaceholderDirective } from '../shared/placeholder/placeholder.directive';
 import { AuthResponseData, AuthService } from './auth-service';
 
 @Component({
@@ -9,13 +11,16 @@ import { AuthResponseData, AuthService } from './auth-service';
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.css']
 })
-export class AuthComponent implements OnInit {
+export class AuthComponent implements OnInit, OnDestroy {
 
   isLoginMode = true;
   isLoading = false;
   errorMessage: string = null;
 
-  constructor(private authService: AuthService, private router: Router) {
+  @ViewChild(PlaceholderDirective, {static: false}) placeholder: PlaceholderDirective;
+  private closeSubscription: Subscription;
+
+  constructor(private authService: AuthService, private router: Router, private componentFactoryResolver: ComponentFactoryResolver) {
   }
 
   ngOnInit(): void {
@@ -51,8 +56,32 @@ export class AuthComponent implements OnInit {
       errorMessage => {
         this.errorMessage = errorMessage;
         this.isLoading = false;
+        this.showErrorAlert(errorMessage);
       });
 
     form.reset();
+  }
+
+  private showErrorAlert(errorMessage: string): void {
+    const componentFactory = this.componentFactoryResolver.resolveComponentFactory(AlertComponent);
+    const hostViewContainerRef = this.placeholder.viewContainerRef;
+    hostViewContainerRef.clear();
+    const componentRef = hostViewContainerRef.createComponent(componentFactory);
+    componentRef.instance.message = errorMessage;
+    this.closeSubscription = componentRef.instance.close.subscribe(() => {
+      this.onHandleError();
+      hostViewContainerRef.clear();
+      this.closeSubscription.unsubscribe();
+    });
+  }
+
+  onHandleError(): void {
+    this.errorMessage = null;
+  }
+
+  ngOnDestroy(): void {
+    if (this.closeSubscription) {
+      this.closeSubscription.unsubscribe();
+    }
   }
 }
