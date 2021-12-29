@@ -1,10 +1,12 @@
 import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { AuthEffects } from './auth/store/auth.effects';
 import { authReducer } from './auth/store/auth.reducer';
 import { CoreModule } from './core.module';
 import { HeaderComponent } from './header/header.component';
@@ -22,6 +24,7 @@ import * as fromApplication from './store/app.reducer';
     AppRoutingModule,
     HttpClientModule,
     StoreModule.forRoot(fromApplication.applicationReducers),
+    EffectsModule.forRoot([AuthEffects]),
     SharedModule,
     CoreModule
   ],
